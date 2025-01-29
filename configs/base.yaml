@@ -1,0 +1,16 @@
+name: Base
+logging: true
+
+data:
+    path: /data
+
+param:
+    lr: 1e-4
+    batch_size: 2_048
+
+trainer:
+    max_steps: 100_000
+    check_val_every_n_epoch: 10
+
+logger:
+    project: autoencoder-base

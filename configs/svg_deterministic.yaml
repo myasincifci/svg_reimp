@@ -1,0 +1,29 @@
+defaults:
+    - base
+
+name: VAE MNIST
+logging: true
+
+n_past: 10
+n_future: 10
+skip: true
+vf_skip: false  
+
+data:
+    name: moving_mnist
+    num_classes: 10
+    shape: [1, 64, 64]
+    seq_len: 20
+    deterministic: true
+
+param:
+    lr: 2e-3
+    beta1: 0.9
+    batch_size: 100
+
+trainer:
+    max_steps: 100_000
+    check_val_every_n_epoch: 1
+
+logger:
+    project: svg-deterministic-moving-mnist
