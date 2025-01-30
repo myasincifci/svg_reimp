@@ -4,7 +4,7 @@ from torchvision.transforms import v2 as T
 import pytorch_lightning as pl
 from pytorch_lightning.utilities.types import TRAIN_DATALOADERS
 
-from template.data_modules.moving_mnist import MovingMNIST
+from .moving_mnist import MovingMNIST
 
 class MovingMnistDM(pl.LightningDataModule):
     def __init__(self, cfg):
