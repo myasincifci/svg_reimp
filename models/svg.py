@@ -35,7 +35,7 @@ class SVG_Deterministic(pl.LightningModule):
                 h, skip = h_seq[i-1]
                 s = h
             else:
-                h = h_seq[i-1][0]
+                h = h_pred #h_seq[i-1][0]
 
             if self.cfg.vf_skip:
                 h_pred = self.lstm(h) + s
