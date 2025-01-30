@@ -47,10 +47,12 @@ class SVG_Deterministic(pl.LightningModule):
 
     def training_step(self, batch, batch_idx):
         x_preds_past, x_preds_future = self(batch) 
-        loss = F.mse_loss(x_preds_future.squeeze(), batch[:,self.cfg.n_past:], reduction='none').mean(dim=(0,2,3)).sum()
-        self.log('train/loss', loss, prog_bar=True)
+        loss_pst = F.mse_loss(x_preds_past.squeeze(), batch[:,1:self.cfg.n_past], reduction='none').mean(dim=(0,2,3)).sum() 
+        loss_ft = F.mse_loss(x_preds_future.squeeze(), batch[:,self.cfg.n_past:], reduction='none').mean(dim=(0,2,3)).sum()
+        self.log('train/loss', loss_ft, prog_bar=True)
+        self.log('train/loss_past', loss_ft)
         
-        return loss
+        return loss_pst + loss_ft
 
     def validation_step(self, batch, batch_idx):
         x_preds_past, x_preds_future = self(batch) 
