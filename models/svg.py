@@ -63,9 +63,9 @@ class SVG_Deterministic(pl.LightningModule):
         for i in range(1, self.cfg.n_past+self.cfg.n_future):
             if i <= self.cfg.n_past:	
                 h, skip = h_seq[i-1]
-                s = h
             else:
                 h = h_pred # h_seq[i-1][0]
+            s = h
 
             if self.cfg.vf_skip:
                 h_pred = self.lstm(h) + s
@@ -77,6 +77,38 @@ class SVG_Deterministic(pl.LightningModule):
                 mse += F.mse_loss(x_pred.squeeze(), x[i])
 
         self.log('val/loss', mse, prog_bar=True)
+
+    def on_validation_epoch_end(self):
+        sample = self.trainer.datamodule.val_dataloader().dataset[0]
+        x = sample.unsqueeze(0)
+        
+        # initialize the hidden state.
+        self.lstm.hidden = self.lstm.init_hidden()
+
+        x = x.permute((1,0,2,3))
+        T, B, H, W = x.size()
+
+        h_seq = [self.encoder(x[t][:,None]) for t in range(T)]
+
+        predictions = []
+        for i in range(1, self.cfg.n_past+self.cfg.n_future):
+            if i <= self.cfg.n_past:	
+                h, skip = h_seq[i-1]
+                s = h
+            else:
+                h = h_pred # h_seq[i-1][0]
+
+            if self.cfg.vf_skip:
+                h_pred = self.lstm(h) + s
+            else:
+                h_pred = self.lstm(h)
+
+            if i >= self.cfg.n_past:
+                x_pred = self.decoder([h_pred, skip])
+                predictions.append(x_pred.squeeze().cpu())
+
+        predictions = torch.stack(predictions, dim=0)
+        self.logger.experiment.add_images('val/sample_predictions', predictions, self.current_epoch)
         
     def configure_optimizers(self):
         optimizer = torch.optim.Adam(self.parameters(), lr=self.cfg.param.lr)
