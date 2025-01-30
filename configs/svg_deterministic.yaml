@@ -6,8 +6,8 @@ logging: true
 
 n_past: 10
 n_future: 10
-skip: true
-vf_skip: false  
+skip: false
+vf_skip: true  
 
 data:
     name: moving_mnist
