@@ -45,19 +45,24 @@ class SVG_Deterministic(pl.LightningModule):
             else:
                 x_preds_future.append(self.decoder([h_pred, skip]))
 
-        return torch.stack(x_preds_past, dim=0).permute((1,0,2,3,4)), torch.stack(x_preds_future, dim=0).permute((1,0,2,3,4))
+        x_seq = [self.decoder([h, skip]) for h, _ in h_seq]
+
+        return torch.stack(x_preds_past, dim=0).permute((1,0,2,3,4)), torch.stack(x_preds_future, dim=0).permute((1,0,2,3,4)), torch.stack(x_seq, dim=0).permute((1,0,2,3,4)) 
 
     def training_step(self, batch, batch_idx):
-        x_preds_past, x_preds_future = self(batch) 
+        x_preds_past, x_preds_future, x_seq = self(batch) 
         loss_pst = F.mse_loss(x_preds_past.squeeze(), batch[:,1:self.cfg.n_past], reduction='none').mean(dim=(0,2,3)).sum() 
         loss_ft = F.mse_loss(x_preds_future.squeeze(), batch[:,self.cfg.n_past:], reduction='none').mean(dim=(0,2,3)).sum()
+        loss_rec = F.mse_loss(x_seq.squeeze(), batch, reduction='none').mean(dim=(0,2,3)).sum()/2.0
+
         self.log('train/loss', loss_ft, prog_bar=True)
         self.log('train/loss_past', loss_ft)
+        self.log('train/loss_rec', loss_rec)
         
         return loss_pst + loss_ft
 
     def validation_step(self, batch, batch_idx):
-        x_preds_past, x_preds_future = self(batch) 
+        x_preds_past, x_preds_future, _ = self(batch) 
         loss = F.mse_loss(x_preds_future.squeeze(), batch[:,self.cfg.n_past:], reduction='none').mean(dim=(0,2,3)).sum()
 
         self.log('val/loss', loss, prog_bar=True)
@@ -67,7 +72,7 @@ class SVG_Deterministic(pl.LightningModule):
         x = sample.unsqueeze(0)
         x = x.repeat(100, 1, 1, 1) # TODO: hack, remove later
         
-        x_preds_past, x_preds_future = self(x)    
+        x_preds_past, x_preds_future, _ = self(x)    
 
         # self.logger.log({"val/sample_predictions": [Image(x_preds_future, caption="Sample Predictions")]}, step=self.current_epoch)
         self.logger.log_image('val/sample_predictions', [make_grid(x_preds_future[0], nrow=10)], self.current_epoch)
