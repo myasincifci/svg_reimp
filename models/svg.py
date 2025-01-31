@@ -48,10 +48,6 @@ class SVG_Deterministic(pl.LightningModule):
         return torch.stack(x_preds_past, dim=0).permute((1,0,2,3,4)), torch.stack(x_preds_future, dim=0).permute((1,0,2,3,4)), torch.stack(x_seq, dim=0).permute((1,0,2,3,4)) 
 
     def training_step(self, batch, batch_idx):
-        opt_ae, opt_lstm = self.optimizers()
-        opt_ae.zero_grad()
-        opt_lstm.zero_grad()
-        
         x_preds_past, x_preds_future, x_seq = self(batch) 
         loss_pst = F.mse_loss(x_preds_past.squeeze(), batch[:,1:self.cfg.n_past], reduction='none').mean(dim=(0,2,3)).sum() 
         loss_ft = F.mse_loss(x_preds_future.squeeze(), batch[:,self.cfg.n_past:], reduction='none').mean(dim=(0,2,3)).sum()
