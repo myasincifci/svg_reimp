@@ -8,6 +8,7 @@ from .modules.lstm import lstm
 class SVG_Deterministic(pl.LightningModule):
     def __init__(self, cfg):
         super(SVG_Deterministic, self).__init__()
+
         self.encoder = encoder(128)
         self.lstm = lstm(128, 128, 256, 2, cfg.param.batch_size)
         self.decoder = decoder(128, skip=cfg.skip)
@@ -47,6 +48,10 @@ class SVG_Deterministic(pl.LightningModule):
         return torch.stack(x_preds_past, dim=0).permute((1,0,2,3,4)), torch.stack(x_preds_future, dim=0).permute((1,0,2,3,4)), torch.stack(x_seq, dim=0).permute((1,0,2,3,4)) 
 
     def training_step(self, batch, batch_idx):
+        opt_ae, opt_lstm = self.optimizers()
+        opt_ae.zero_grad()
+        opt_lstm.zero_grad()
+        
         x_preds_past, x_preds_future, x_seq = self(batch) 
         loss_pst = F.mse_loss(x_preds_past.squeeze(), batch[:,1:self.cfg.n_past], reduction='none').mean(dim=(0,2,3)).sum() 
         loss_ft = F.mse_loss(x_preds_future.squeeze(), batch[:,self.cfg.n_past:], reduction='none').mean(dim=(0,2,3)).sum()
@@ -100,8 +105,8 @@ class SVG_Deterministic(pl.LightningModule):
     #     self.logger.experiment.add_images('val/sample_predictions', predictions, self.current_epoch)
         
     def configure_optimizers(self):
-        # optimizer = torch.optim.Adam(self.parameters(), lr=self.cfg.param.lr)
-        ae_optimizer = torch.optim.Adam(list(self.encoder.parameters())+list(self.decoder.parameters()), lr=self.cfg.param.lr)
-        lstm_optimizer = torch.optim.Adam(self.lstm.parameters(), lr=self.cfg.param.lr)
+        optimizer = torch.optim.Adam(self.parameters(), lr=self.cfg.param.lr)
+        # ae_optimizer = torch.optim.Adam(list(self.encoder.parameters())+list(self.decoder.parameters()), lr=self.cfg.param.lr)
+        # lstm_optimizer = torch.optim.Adam(self.lstm.parameters(), lr=self.cfg.param.lr)
 
-        return [ae_optimizer, lstm_optimizer]
+        return optimizer #[ae_optimizer, lstm_optimizer]
