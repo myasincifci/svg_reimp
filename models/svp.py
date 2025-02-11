@@ -50,14 +50,14 @@ class SVP(pl.LightningModule):
         self.log('val/loss', loss_pst, prog_bar=True)
         self.log('cal/loss_past', loss_fut)
 
-    # def on_validation_epoch_end(self):
-    #     sample = torch.from_numpy(self.trainer.datamodule.val_dataloader().dataset[0]).to(self.device)
-    #     x = sample.unsqueeze(0)
-    #     x = x.repeat(100, 1, 1, 1) # TODO: hack, remove later
+    def on_validation_epoch_end(self):
+        sample = torch.from_numpy(self.trainer.datamodule.val_dataloader().dataset[0]).to(self.device)
+        x = sample.unsqueeze(0)
+        x = x.repeat(100, 1, 1, 1) # TODO: hack, remove later
         
-    #     x_preds_past, x_preds_future = self(x)    
+        x_preds_past, x_preds_future = self(x)    
 
-    #     self.logger.log_image('val/sample_predictions', [make_grid(x_preds_future[0], nrow=10)], self.current_epoch)
+        self.logger.log_image('val/sample_predictions', [make_grid(x_preds_future[0][:,None], nrow=10)], self.current_epoch)
 
     def configure_optimizers(self):
         optimizer = torch.optim.Adam(self.parameters(), lr=self.cfg.param.lr)
