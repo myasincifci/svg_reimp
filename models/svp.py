@@ -48,7 +48,7 @@ class SVP(pl.LightningModule):
         loss_fut = nn.functional.mse_loss(preds_future, x[:,self.cfg.n_past:], reduction='none').mean(dim=(0,2,3)).sum()
 
         self.log('val/loss', loss_pst, prog_bar=True)
-        self.log('cal/loss_past', loss_fut)
+        self.log('val/loss_past', loss_fut)
 
     def on_validation_epoch_end(self):
         sample = torch.from_numpy(self.trainer.datamodule.val_dataloader().dataset[0]).to(self.device)

@@ -45,7 +45,7 @@ class LSTM(nn.Module):
             output = output[:, None, :] 
             outputs += [output]
 
-        for i in range(future):  # if we should predict the future
+        for i in range(future):
             input_t = output.squeeze(1)
             h_t[0], c_t[0] = self.lstm_cells[0](input_t, (h_t[0], c_t[0]))
             for i in range(1, self.num_layers):

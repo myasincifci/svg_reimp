@@ -8,4 +8,4 @@
 #SBATCH --array=1-1
 
 apptainer run --nv /home/myasincifci/containers/main/main.sif \
-    python train.py --config-name svg_deterministic
+    python train.py --config-name svp
