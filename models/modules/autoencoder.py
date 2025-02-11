@@ -105,9 +105,9 @@ class ConvDecoder(nn.Module):
                 nn.ConvTranspose2d(c_hid, data_shape[0], kernel_size=3, output_padding=1, padding=1, stride=2),
                 nn.Sigmoid(),
             ),
-            'flatten': nn.Sequential(
-                nn.Flatten(),
-            )
+            # 'flatten': nn.Sequential(
+            #     nn.Flatten(),
+            # )
         })
 
     def forward(self, x):

@@ -10,6 +10,7 @@ import wandb
 
 from data_modules.moving_mnist_dm import MovingMnistDM
 from models.svg import SVG_Deterministic
+from models.svp import SVP
 
 @hydra.main(version_base=None, config_path="configs")
 def main(cfg: DictConfig) -> None:
@@ -34,7 +35,8 @@ def main(cfg: DictConfig) -> None:
     data_module = MovingMnistDM(cfg)
 
     # Model
-    model = SVG_Deterministic(cfg=cfg)
+    # model = SVG_Deterministic(cfg=cfg)
+    model = SVP(cfg=cfg)
 
     trainer = L.Trainer(
         max_steps=cfg.trainer.max_steps,

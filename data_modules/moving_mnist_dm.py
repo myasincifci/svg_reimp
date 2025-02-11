@@ -27,13 +27,13 @@ class MovingMnistDM(pl.LightningDataModule):
         self.train_set = MovingMNIST(
             train=True, 
             data_root='data',
-            seq_len=cfg.data.seq_len,
+            seq_len=cfg.n_past + cfg.n_future,
             deterministic=cfg.data.deterministic,
         )
         self.val_set = MovingMNIST(
             train=False, 
             data_root='data',
-            seq_len=cfg.data.seq_len,
+            seq_len=cfg.n_past + cfg.n_future,
             deterministic=cfg.data.deterministic,
         )
 

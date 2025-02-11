@@ -1,0 +1,26 @@
+defaults:
+    - base
+
+name: SVP
+logging: true
+
+n_past: 10
+n_future: 10
+vf_skip: false  
+
+data:
+    name: moving_mnist
+    shape: [1, 64, 64]
+    deterministic: true
+
+param:
+    lr: 2e-3
+    beta1: 0.9
+    batch_size: 100
+
+trainer:
+    max_steps: 100_000
+    check_val_every_n_epoch: 1
+
+logger:
+    project: svg-deterministic-moving-mnist

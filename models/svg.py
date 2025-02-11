@@ -22,7 +22,9 @@ class SVG_Deterministic(pl.LightningModule):
         x = x.permute((1,0,2,3))
         T, B, H, W = x.size()
 
-        h_seq = [self.encoder(x[t][:,None]) for t in range(T)]
+        # h_seq = [self.encoder(x[t][:,None]) for t in range(T)]
+        h_seq, skip = self.encoder(x.reshape(T*B, 1, H, W))
+        h_seq = h_seq.reshape(T, B, -1)
 
         x_preds_past = []
         x_preds_future = []
