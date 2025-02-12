@@ -8,6 +8,10 @@ n_past: 10
 n_future: 10
 vf_skip: true  
 
+lstm:
+    hidden_dim: 256
+    layers: 2
+
 data:
     name: moving_mnist
     shape: [1, 64, 64]

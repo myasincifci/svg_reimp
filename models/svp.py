@@ -11,7 +11,7 @@ class SVP(pl.LightningModule):
     def __init__(self, cfg):
         super(SVP, self).__init__()
         self.encoder = ConvEncoder(tuple(cfg.data.shape), 32, 128, act_fn=nn.GELU, variational=False)
-        self.lstm = LSTM(128, 256, 2, skip=cfg.vf_skip)
+        self.lstm = LSTM(128, cfg.lstm.hidden_dim, cfg.lstm.layers, skip=cfg.vf_skip)
         self.decoder = ConvDecoder(tuple(cfg.data.shape), 32, 128, act_fn=nn.GELU)
 
         self.cfg = cfg
