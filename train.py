@@ -35,8 +35,13 @@ def main(cfg: DictConfig) -> None:
     data_module = MovingMnistDM(cfg)
 
     # Model
-    # model = SVG_Deterministic(cfg=cfg)
-    model = SVP(cfg=cfg)
+    match cfg.name:
+        case 'SVG':
+            model = SVG_Deterministic(cfg=cfg)
+        case 'SVP':
+            model = SVP(cfg=cfg)
+        case _:
+            raise ValueError(f"Unknown model name: {cfg.name}")
 
     trainer = L.Trainer(
         max_steps=cfg.trainer.max_steps,

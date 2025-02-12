@@ -68,15 +68,16 @@ class SVG_Deterministic(pl.LightningModule):
         self.log('val/loss', loss, prog_bar=True)
 
     def on_validation_epoch_end(self):
-        sample = torch.from_numpy(self.trainer.datamodule.val_dataloader().dataset[0]).to(self.device)
-        x = sample.unsqueeze(0)
-        x = x.repeat(100, 1, 1, 1) # TODO: hack, remove later
-        
-        x_preds_past, x_preds_future, _ = self(x)    
+        if self.cfg.logging:
+            sample = torch.from_numpy(self.trainer.datamodule.val_dataloader().dataset[0]).to(self.device)
+            x = sample.unsqueeze(0)
+            x = x.repeat(100, 1, 1, 1) # TODO: hack, remove later
+            
+            x_preds_past, x_preds_future, _ = self(x)    
 
-        # self.logger.log({"val/sample_predictions": [Image(x_preds_future, caption="Sample Predictions")]}, step=self.current_epoch)
-        self.logger.log_image('val/sample_predictions', [make_grid(x_preds_future[0], nrow=10)], self.current_epoch)
-        
+            # self.logger.log({"val/sample_predictions": [Image(x_preds_future, caption="Sample Predictions")]}, step=self.current_epoch)
+            self.logger.log_image('val/sample_predictions', [make_grid(x_preds_future[0], nrow=10)], self.current_epoch)
+            
     def configure_optimizers(self):
         optimizer = torch.optim.Adam(self.parameters(), lr=self.cfg.param.lr)
 

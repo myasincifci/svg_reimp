@@ -1,7 +1,7 @@
 defaults:
     - base
 
-name: VAE MNIST
+name: SVG
 logging: true
 
 n_past: 10
