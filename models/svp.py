@@ -10,9 +10,9 @@ from torchvision.utils import make_grid
 class SVP(pl.LightningModule):
     def __init__(self, cfg):
         super(SVP, self).__init__()
-        self.encoder = ConvEncoder(tuple(cfg.data.shape), 32, 128, act_fn=nn.GELU, variational=False)
-        self.lstm = LSTM(128, cfg.lstm.hidden_dim, cfg.lstm.layers, skip=cfg.vf_skip)
-        self.decoder = ConvDecoder(tuple(cfg.data.shape), 32, 128, act_fn=nn.GELU)
+        self.encoder = ConvEncoder(tuple(cfg.data.shape), cfg.autoencoder.c_hid, cfg.autoencoder.latent_dim, act_fn=nn.GELU, variational=False)
+        self.lstm = LSTM(cfg.autoencoder.latent_dim, cfg.lstm.hidden_dim, cfg.lstm.layers, skip=cfg.vf_skip)
+        self.decoder = ConvDecoder(tuple(cfg.data.shape), cfg.autoencoder.c_hid, cfg.autoencoder.latent_dim, act_fn=nn.GELU)
 
         self.cfg = cfg
 
@@ -51,13 +51,14 @@ class SVP(pl.LightningModule):
         self.log('val/loss_past', loss_fut)
 
     def on_validation_epoch_end(self):
-        sample = torch.from_numpy(self.trainer.datamodule.val_dataloader().dataset[0]).to(self.device)
-        x = sample.unsqueeze(0)
-        x = x.repeat(100, 1, 1, 1) # TODO: hack, remove later
-        
-        x_preds_past, x_preds_future = self(x)    
+        if self.cfg.logging:
+            sample = torch.from_numpy(self.trainer.datamodule.val_dataloader().dataset[0]).to(self.device)
+            x = sample.unsqueeze(0)
+            x = x.repeat(100, 1, 1, 1) # TODO: hack, remove later
+            
+            x_preds_past, x_preds_future = self(x)    
 
-        self.logger.log_image('val/sample_predictions', [make_grid(x_preds_future[0][:,None], nrow=10)], self.current_epoch)
+            self.logger.log_image('val/sample_predictions', [make_grid(x_preds_future[0][:,None], nrow=10)], self.current_epoch)
 
     def configure_optimizers(self):
         optimizer = torch.optim.Adam(self.parameters(), lr=self.cfg.param.lr)

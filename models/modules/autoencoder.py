@@ -79,6 +79,7 @@ class ConvEncoder(nn.Module):
 class ConvDecoder(nn.Module):
     def __init__(self, data_shape, c_hid, latent_dim, act_fn):
         super().__init__()
+        self.c_hid = c_hid
         self.fc = nn.Linear(latent_dim, 64*2*c_hid)
         self.layers = nn.ModuleDict({
             'deconv_1': nn.Sequential(
@@ -105,13 +106,11 @@ class ConvDecoder(nn.Module):
                 nn.ConvTranspose2d(c_hid, data_shape[0], kernel_size=3, output_padding=1, padding=1, stride=2),
                 nn.Sigmoid(),
             ),
-            # 'flatten': nn.Sequential(
-            #     nn.Flatten(),
-            # )
         })
 
     def forward(self, x):
-        x = self.fc(x).view(-1, 64, 8, 8)
+        x = self.fc(x)
+        x = x.view(-1, 2*self.c_hid, 8, 8)
         for name, layer in self.layers.items():
             x = layer(x)
 

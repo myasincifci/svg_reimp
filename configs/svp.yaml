@@ -12,6 +12,10 @@ lstm:
     hidden_dim: 256
     layers: 2
 
+autoencoder:
+    c_hid: 64
+    latent_dim: 128
+
 data:
     name: moving_mnist
     shape: [1, 64, 64]
@@ -19,8 +23,7 @@ data:
 
 param:
     lr: 2e-3
-    beta1: 0.9
-    batch_size: 100
+    batch_size: 64
 
 trainer:
     max_steps: 100_000
