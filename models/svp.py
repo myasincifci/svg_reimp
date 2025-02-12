@@ -72,7 +72,7 @@ class SVP(pl.LightningModule):
             x = sample.unsqueeze(0)
             x = x.repeat(100, 1, 1, 1) # TODO: hack, remove later
             
-            x_preds_past, x_preds_future = self(x)    
+            x_preds_past, x_preds_future, _ = self(x)    
 
             self.logger.log_image('val/sample_predictions', [make_grid(x_preds_future[0][:,None], nrow=10)], self.current_epoch)
 
