@@ -32,8 +32,8 @@ class SVP(pl.LightningModule):
         x = batch
         preds_past, preds_future = self(x)
         
-        loss_pst = nn.functional.mse_loss(preds_past, x[:,1:self.cfg.n_past], reduction='none').mean(dim=(0,2,3)).sum()
-        loss_fut = nn.functional.mse_loss(preds_future, x[:,self.cfg.n_past:], reduction='none').mean(dim=(0,2,3)).sum()
+        loss_pst = nn.functional.mse_loss(preds_past, x[:,1:self.cfg.n_past], reduction='none').mean(dim=(1,2,3)).sum()
+        loss_fut = nn.functional.mse_loss(preds_future, x[:,self.cfg.n_past:], reduction='none').mean(dim=(1,2,3)).sum()
 
         self.log('train/loss', loss_pst, prog_bar=True)
         self.log('train/loss_past', loss_fut)
@@ -44,8 +44,8 @@ class SVP(pl.LightningModule):
         x = batch
         preds_past, preds_future = self(x)
         
-        loss_pst = nn.functional.mse_loss(preds_past, x[:,1:self.cfg.n_past], reduction='none').mean(dim=(0,2,3)).sum()
-        loss_fut = nn.functional.mse_loss(preds_future, x[:,self.cfg.n_past:], reduction='none').mean(dim=(0,2,3)).sum()
+        loss_pst = nn.functional.mse_loss(preds_past, x[:,1:self.cfg.n_past], reduction='none').mean(dim=(1,2,3)).sum()
+        loss_fut = nn.functional.mse_loss(preds_future, x[:,self.cfg.n_past:], reduction='none').mean(dim=(1,2,3)).sum()
 
         self.log('val/loss', loss_pst, prog_bar=True)
         self.log('val/loss_past', loss_fut)

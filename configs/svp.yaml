@@ -22,8 +22,8 @@ data:
     deterministic: true
 
 param:
-    lr: 2e-3
-    batch_size: 64
+    lr: 5e-4
+    batch_size: 100
 
 trainer:
     max_steps: 100_000
