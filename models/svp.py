@@ -7,6 +7,16 @@ import pytorch_lightning as pl
 
 from torchvision.utils import make_grid
 
+# TODO: work in progress
+class VSVP(pl.LightningModule):
+    def __init__(self, cfg):
+        super(SVP, self).__init__()
+        self.encoder = ConvEncoder(tuple(cfg.data.shape), cfg.autoencoder.c_hid, cfg.autoencoder.latent_dim, act_fn=nn.GELU, variational=True)
+        self.lstm = LSTM(cfg.autoencoder.latent_dim, cfg.lstm.hidden_dim, cfg.lstm.layers, skip=cfg.vf_skip)
+        self.decoder = ConvDecoder(tuple(cfg.data.shape), cfg.autoencoder.c_hid, cfg.autoencoder.latent_dim, act_fn=nn.GELU)
+
+        self.cfg = cfg
+
 class SVP(pl.LightningModule):
     def __init__(self, cfg):
         super(SVP, self).__init__()
@@ -22,33 +32,39 @@ class SVP(pl.LightningModule):
         z = self.encoder(x.view(B*T, 1, H, W)).view(B, T, -1)
         z_ = self.lstm(z[:, :self.cfg.n_past], future=self.cfg.n_future)
         x_ = self.decoder(z_.reshape(B*T, -1)).reshape(B, T, H, W)
+        x_rec = self.decoder(z.reshape(B*T, -1)).reshape(B, T, H, W)
 
         preds_past = x_[:, :self.cfg.n_past-1]
-        preds_future = x_[:, self.cfg.n_past-1:-1]
+        preds_future = x_[:, self.cfg.n_past-1:-1] 
 
-        return preds_past, preds_future
+        return preds_past, preds_future, x_rec
     
     def training_step(self, batch, batch_idx):
         x = batch
-        preds_past, preds_future = self(x)
+        preds_past, preds_future, x_rec = self(x)
         
         loss_pst = nn.functional.mse_loss(preds_past, x[:,1:self.cfg.n_past], reduction='none').mean(dim=(0,2,3)).sum()
         loss_fut = nn.functional.mse_loss(preds_future, x[:,self.cfg.n_past:], reduction='none').mean(dim=(0,2,3)).sum()
+        loss_rec = nn.functional.mse_loss(x_rec, x, reduction='none').mean(dim=(0,2,3)).sum()
 
         self.log('train/loss', loss_pst, prog_bar=True)
         self.log('train/loss_past', loss_fut)
+        self.log('train/loss_rec', loss_rec)
 
-        return loss_pst + loss_fut
+        return loss_pst + loss_fut  + loss_rec
     
     def validation_step(self, batch, batch_idx):
         x = batch
-        preds_past, preds_future = self(x)
+        preds_past, preds_future, x_rec = self(x)
         
         loss_pst = nn.functional.mse_loss(preds_past, x[:,1:self.cfg.n_past], reduction='none').mean(dim=(0,2,3)).sum()
         loss_fut = nn.functional.mse_loss(preds_future, x[:,self.cfg.n_past:], reduction='none').mean(dim=(0,2,3)).sum()
+        loss_rec = nn.functional.mse_loss(x_rec, x, reduction='none').mean(dim=(0,2,3)).sum()
+
 
         self.log('val/loss', loss_pst, prog_bar=True)
         self.log('val/loss_past', loss_fut)
+        self.log('val/loss_rec', loss_rec)
 
     def on_validation_epoch_end(self):
         if self.cfg.logging:
