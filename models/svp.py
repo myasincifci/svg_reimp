@@ -37,11 +37,13 @@ class SVP(pl.LightningModule):
         preds_past = x_[:, :self.cfg.n_past-1]
         preds_future = x_[:, self.cfg.n_past-1:-1] 
 
-        return preds_past, preds_future, x_rec
+        z_loss = nn.functional.mse_loss(z[:,1:self.cfg.n_past], z_[:,:self.cfg.n_past-1])
+
+        return preds_past, preds_future, x_rec, z_loss
     
     def training_step(self, batch, batch_idx):
         x = batch
-        preds_past, preds_future, x_rec = self(x)
+        preds_past, preds_future, x_rec, z_loss = self(x)
         
         loss_pst = nn.functional.mse_loss(preds_past, x[:,1:self.cfg.n_past], reduction='none').mean(dim=(0,2,3)).sum()
         loss_fut = nn.functional.mse_loss(preds_future, x[:,self.cfg.n_past:], reduction='none').mean(dim=(0,2,3)).sum()
@@ -50,12 +52,13 @@ class SVP(pl.LightningModule):
         self.log('train/loss', loss_fut, prog_bar=True)
         self.log('train/loss_past', loss_pst)
         self.log('train/loss_rec', loss_rec)
+        self.log('train/loss_z', z_loss)
 
-        return loss_pst + loss_fut  + self.cfg.param.r*loss_rec
+        return loss_pst + loss_fut  + self.cfg.param.r*loss_rec + z_loss
     
     def validation_step(self, batch, batch_idx):
         x = batch
-        preds_past, preds_future, x_rec = self(x)
+        preds_past, preds_future, x_rec, z_loss = self(x)
         
         loss_pst = nn.functional.mse_loss(preds_past, x[:,1:self.cfg.n_past], reduction='none').mean(dim=(0,2,3)).sum()
         loss_fut = nn.functional.mse_loss(preds_future, x[:,self.cfg.n_past:], reduction='none').mean(dim=(0,2,3)).sum()
@@ -65,6 +68,7 @@ class SVP(pl.LightningModule):
         self.log('val/loss', loss_fut, prog_bar=True)
         self.log('val/loss_past', loss_pst)
         self.log('val/loss_rec', loss_rec)
+        self.log('val/loss_z', z_loss)
 
     def on_validation_epoch_end(self):
         if self.cfg.logging:
@@ -72,7 +76,7 @@ class SVP(pl.LightningModule):
             x = sample.unsqueeze(0)
             x = x.repeat(100, 1, 1, 1) # TODO: hack, remove later
             
-            x_preds_past, x_preds_future, _ = self(x)    
+            x_preds_past, x_preds_future, _, _ = self(x)    
 
             self.logger.log_image('val/sample_predictions', [make_grid(x_preds_future[0][:,None], nrow=10)], self.current_epoch)
 
