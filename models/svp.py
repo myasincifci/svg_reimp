@@ -51,7 +51,7 @@ class SVP(pl.LightningModule):
         self.log('train/loss_past', loss_pst)
         self.log('train/loss_rec', loss_rec)
 
-        return loss_pst + loss_fut  + loss_rec
+        return loss_pst + loss_fut  + self.cfg.param.r*loss_rec
     
     def validation_step(self, batch, batch_idx):
         x = batch
