@@ -10,7 +10,7 @@ from torchvision.utils import make_grid
 # TODO: work in progress
 class VSVP(pl.LightningModule):
     def __init__(self, cfg):
-        super(SVP, self).__init__()
+        super(VSVP, self).__init__()
         self.encoder = ConvEncoder(tuple(cfg.data.shape), cfg.autoencoder.c_hid, cfg.autoencoder.latent_dim, act_fn=nn.GELU, variational=True)
         self.lstm = LSTM(cfg.autoencoder.latent_dim, cfg.lstm.hidden_dim, cfg.lstm.layers, skip=cfg.vf_skip)
         self.decoder = ConvDecoder(tuple(cfg.data.shape), cfg.autoencoder.c_hid, cfg.autoencoder.latent_dim, act_fn=nn.GELU)
@@ -35,16 +35,16 @@ class SVP(pl.LightningModule):
         x_rec = self.decoder(z.reshape(B*T, -1)).reshape(B, T, H, W)
 
         preds_past = x_[:, :self.cfg.n_past-1]
-        preds_future = x_[:, self.cfg.n_past-1:-1] 
+        preds_future = x_[:, self.cfg.n_past-1:-1]
 
         z_loss = nn.functional.mse_loss(z[:,1:self.cfg.n_past], z_[:,:self.cfg.n_past-1])
 
         return preds_past, preds_future, x_rec, z_loss
-    
+
     def training_step(self, batch, batch_idx):
         x = batch
         preds_past, preds_future, x_rec, z_loss = self(x)
-        
+
         loss_pst = nn.functional.mse_loss(preds_past, x[:,1:self.cfg.n_past], reduction='none').mean(dim=(0,2,3)).sum()
         loss_fut = nn.functional.mse_loss(preds_future, x[:,self.cfg.n_past:], reduction='none').mean(dim=(0,2,3)).sum()
         loss_rec = nn.functional.mse_loss(x_rec, x, reduction='none').mean(dim=(0,2,3)).sum()
@@ -55,11 +55,11 @@ class SVP(pl.LightningModule):
         self.log('train/loss_z', z_loss)
 
         return loss_pst + loss_fut  + self.cfg.param.r*loss_rec + z_loss
-    
+
     def validation_step(self, batch, batch_idx):
         x = batch
         preds_past, preds_future, x_rec, z_loss = self(x)
-        
+
         loss_pst = nn.functional.mse_loss(preds_past, x[:,1:self.cfg.n_past], reduction='none').mean(dim=(0,2,3)).sum()
         loss_fut = nn.functional.mse_loss(preds_future, x[:,self.cfg.n_past:], reduction='none').mean(dim=(0,2,3)).sum()
         loss_rec = nn.functional.mse_loss(x_rec, x, reduction='none').mean(dim=(0,2,3)).sum()
@@ -75,8 +75,8 @@ class SVP(pl.LightningModule):
             sample = torch.from_numpy(self.trainer.datamodule.val_dataloader().dataset[0]).to(self.device)
             x = sample.unsqueeze(0)
             x = x.repeat(100, 1, 1, 1) # TODO: hack, remove later
-            
-            x_preds_past, x_preds_future, _, _ = self(x)    
+
+            x_preds_past, x_preds_future, _, _ = self(x)
 
             self.logger.log_image('val/sample_predictions', [make_grid(x_preds_future[0][:,None], nrow=10)], self.current_epoch)
 

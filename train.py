@@ -11,6 +11,7 @@ import wandb
 from data_modules.moving_mnist_dm import MovingMnistDM
 from models.svg import SVG_Deterministic
 from models.svp import SVP
+from models.tae import TAEModule
 
 @hydra.main(version_base=None, config_path="configs")
 def main(cfg: DictConfig) -> None:
@@ -40,6 +41,8 @@ def main(cfg: DictConfig) -> None:
             model = SVG_Deterministic(cfg=cfg)
         case 'SVP':
             model = SVP(cfg=cfg)
+        case "TAE":
+            model = TAEModule(cfg=cfg)
         case _:
             raise ValueError(f"Unknown model name: {cfg.name}")
 
@@ -60,3 +63,5 @@ def main(cfg: DictConfig) -> None:
 
 if __name__ == "__main__":
     main()
+    for _ in range(10):
+        pass
