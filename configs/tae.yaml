@@ -4,8 +4,8 @@ defaults:
 name: TAE
 logging: true
 
-n_past: 10
-n_future: 10
+n_past: 16
+n_future: 16
 skip: false
 vf_skip: false  
 

@@ -34,6 +34,40 @@ class Downsample(nn.Module):
         x = self.t_conv(x)
 
         return x
+    
+class Upsample(nn.Module):
+    def __init__(self, in_channels):
+        super().__init__()
+        # Stride 2 convolution reduces resolution by half
+        self.sp_conv = nn.Conv3d(
+            in_channels,
+            in_channels,
+            kernel_size=(1, 3, 3),
+            stride=(1, 1, 1),
+            padding=(0, 1, 1),
+        )
+        self.t_conv = nn.Conv3d(
+            in_channels,
+            in_channels,
+            kernel_size=(3, 1, 1),
+            stride=(1, 1, 1),
+            padding=(1, 0, 0),
+            padding_mode='replicate'
+        )
+        self.act = nn.SiLU()
+
+    def forward(self, x):
+        x = F.interpolate(
+            x, scale_factor=(1, 2, 2), mode="nearest", align_corners=False
+        )
+        x = self.sp_conv(x)
+        x = self.act(x)
+        x = F.interpolate(
+            x, scale_factor=(2, 1, 1), mode="nearest", align_corners=False            
+        )
+        x = self.t_conv(x)
+
+        return x
 
 
 class ResnetBlock(nn.Module):
@@ -129,6 +163,7 @@ class TAEEncoder(nn.Module):
             stride=(1, 1, 1),
             padding=0,
         )
+
         self.block1 = ResnetBlock(in_channels=16, out_channels=16)
         self.down1 = Downsample(in_channels=16)
 
@@ -137,6 +172,23 @@ class TAEEncoder(nn.Module):
 
         self.block3 = ResnetBlock(in_channels=32, out_channels=64)
         self.down3 = Downsample(in_channels=64)
+
+        self.block4 = ResnetBlock(in_channels=64, out_channels=64)
+        self.up1 = Upsample(in_channels=64)
+
+        self.block5 = ResnetBlock(in_channels=64, out_channels=32)
+        self.up2 = Upsample(in_channels=32)
+
+        self.block4 = ResnetBlock(in_channels=32, out_channels=16)
+        self.up3 = Upsample(in_channels=16)
+
+        self.out_conv = nn.Conv3d(
+            in_channels=16,
+            out_channels=1,
+            kernel_size=(1, 1, 1),
+            stride=(1, 1, 1),
+            padding=0,
+        )
 
     def forward(self, x):
         if len(x.shape) == 4:
@@ -154,6 +206,15 @@ class TAEEncoder(nn.Module):
 
         x = self.block3(x)
         x = self.down3(x)
+
+        x = self.block4(x)
+        x = self.up1(x)
+
+        x = self.block5(x)
+        x = self.up2(x)
+
+        x = self.block4(x)
+        x = self.up3(x)
 
         return x
 
